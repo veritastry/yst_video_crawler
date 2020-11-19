@@ -67,7 +67,7 @@ class YstVideoDownloadPipeline(FilesPipeline):
                                           self.download_threads, self.download_threads)
             command_exec = command_exec.encode("utf-8")
             print("command_exec=", command_exec)
-            os.system(str(command_exec, encoding="utf-8"))
+            yield os.system(str(command_exec, encoding="utf-8"))
         else:
             print("len(m3u8path<=0")
 
