@@ -64,7 +64,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'yst_video_crawler.pipelines.YstVideoCrawlerPipeline': 300,
+    'yst_video_crawler.pipelines.YstVideoDownloadPipeline': 300,
+    'yst_video_crawler.pipelines.YstVideoDatabasePipeline': 301,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
@@ -90,3 +91,4 @@ ITEM_PIPELINES = {
 chrome_path = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 chrome_driver_path = r"D:\dev\python\crawler\yst_video_crawler\yst_video_crawler\spiders\chromedriver.exe"
 video_store_path = r"D:\dev\python\crawler\yst_video_crawler"
+FILES_STORE = 'D:\\video'

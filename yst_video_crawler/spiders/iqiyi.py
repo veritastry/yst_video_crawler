@@ -7,8 +7,6 @@ import scrapy
 from scrapy import crawler
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-from scrapy.utils.project import get_project_settings
-
 from yst_video_crawler.items import IqiyiVideoCrawlerItem
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions
@@ -61,16 +59,16 @@ class IqiyiSpider(CrawlSpider):
 
     def parse_play_page(self, response):
         print("parse_detail")
-        qyitem = IqiyiVideoCrawlerItem()
+        item = IqiyiVideoCrawlerItem()
         title = response.xpath('//*[@id="block-C"]/div[1]/div/div/div/div/div[1]/h1/em/text()').extract_first()
         if title == '':
             return None
         url_download = os.path.join(os.path.abspath(os.path.curdir),
                                     u"{}.m3u8".format(title))
-        qyitem['video_name'] = title
-        qyitem['m3u8path'] = url_download
-        qyitem['mp4path'] = os.path.join(r'D:\dev\python\crawler\yst_video_crawler' )
-        # qyitem['mp4path'] =  get_project_settings().get('video_store_path')
+        item['video_name'] = title
+        item['m3u8path'] = url_download
+        item['mp4path'] = os.path.join(r'D:\dev\python\crawler\yst_video_crawler' )
+        # item['mp4path'] =  get_project_settings().get('video_store_path')
         # scrapy.logging.debug("  url_download=", url_download)
         print("  url_download=", url_download)
         script_iqiyi = open(r"D:\dev\python\crawler\yst_video_crawler\yst_video_crawler\spiders\iqiyi.js").read()
@@ -98,7 +96,7 @@ class IqiyiSpider(CrawlSpider):
         data = re.findall("{\".*\"}", result, re.DOTALL)
         data = json.loads(data[0])
         videos = data["data"]["program"]["video"]
-        # qyitem["vlist"] = videos
+        # item["vlist"] = videos
         # scrapy.logging.info("videos",videos)
         # print("videos",videos)
         for video in videos:
@@ -107,7 +105,7 @@ class IqiyiSpider(CrawlSpider):
                 with open(url_download, "w") as fd:
                     fd.write(m3u8)
                 break
-        yield qyitem
+        yield item
     def closed(self, spider):
         print("IqiyiSpider close ")
         self.browser.quit()
