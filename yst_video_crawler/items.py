@@ -17,6 +17,6 @@ class IqiyiVideoCrawlerItem(scrapy.Item):
     # vid = scrapy.Field()
     mp4path = scrapy.Field()
     m3u8path = scrapy.Field()
-    # dldate = scrapy.Field()
-    # vlist = scrapy.Field()
+    video_url = scrapy.Field()
+    serials_name = scrapy.Field()
     pass
