@@ -6,6 +6,7 @@ function getCookie(a) {
     }
     return null
 }
+
 var req1 = new XMLHttpRequest();
 req1.open("GET", "https://static.iqiyi.com/js/common/f6a3054843de4645b34d205a9f377d25.js", false);
 req1.onload = function() {

@@ -2,18 +2,23 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import datetime
 import json
 import logging
 import os
 import re
+import threading
+import time
+from time import sleep
+import redis
 
 import requests
 from scrapy import signals
 from scrapy import responsetypes
-from scrapy.http import HtmlResponse
+from scrapy.http import HtmlResponse, TextResponse
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
-
+from goto import with_goto
 
 class YstVideoCrawlerSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -66,7 +71,10 @@ class YstVideoCrawlerDownloaderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the downloader middleware does not modify the
     # passed objects.
-
+    def __init__(self, *args, **kwargs):
+        self.lock = threading.Lock()
+        self.count = 0
+        self.retry_times = 0
     @classmethod
     def from_crawler(cls, crawler):
         # This method is used by Scrapy to create your spiders.
@@ -74,6 +82,7 @@ class YstVideoCrawlerDownloaderMiddleware:
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
+    @with_goto
     def process_request(self, request, spider):
         # Called for each request that goes through the downloader
         # middleware.
@@ -84,14 +93,67 @@ class YstVideoCrawlerDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        browser = spider.browser
-        browser.get(request.url)
-        page_text = browser.page_source
-        new_response = HtmlResponse(url=request.url,
-                                    body=page_text,
-                                    encoding='utf-8',
-                                    request=request)
-        return new_response
+        print("process_request ")
+        if re.search(r'https:\/\/www.iqiyi.com\/a_[A-Za-z0-9]+.html', request.url) != None:
+            browser = spider.browser
+            redis_conn = spider.redis_conn
+            self.retry_times = 0
+            self.count += 1
+            if self.count > 2:
+                return
+            while True:
+                self.retry_times += 1
+                content = ''
+                browser.get(request.url)
+                page_text = browser.page_source
+                getiqiyiEpisodeLinkjs = open(r"D:\dev\python\crawler\yst_video_crawler\yst_video_crawler\spiders\iqiyiEpisode.js").read()
+                self.lock.acquire()
+                browser.execute_script(getiqiyiEpisodeLinkjs)
+                alist_length = browser.execute_script("return window.alist_length;")
+                print('alist_length = ', alist_length)
+                start_time = datetime.datetime.now()
+                sleep(30 + alist_length * 5)
+                stop_time = datetime.datetime.now()
+                cost = stop_time - start_time
+                print("sleep   wait cost %s second" % (cost.seconds))
+                episode_links = browser.execute_script("return window.episodeLink;")
+                for epsd in episode_links:
+                    content = content + epsd + ','
+                self.lock.release()
+                if (len(episode_links) > (alist_length-1)*50) or self.retry_times >= 3:
+                    print("data is  ok or times complete, stop retry crawl")
+                    break
+            print('serials url=', request.url, 'episode total= ', len(episode_links))
+            ex = redis_conn.hset('album', request.url, content)
+            print("stored to redis")
+            if ex != None:
+                print('该url没有被爬取过，可以进行数据的爬取')
+            else:
+                print('数据还没有更新，暂无新数据可爬取！')
+            new_response = HtmlResponse(url=request.url,
+                                        body=page_text,
+                                        encoding='utf-8',
+                                        request=request)
+            return new_response
+        else:
+            browser = spider.browser
+            browser.get(request.url)
+            page_text = browser.page_source
+            new_response = HtmlResponse(url=request.url,
+                                        body=page_text,
+                                        encoding='utf-8',
+                                        request=request)
+            return new_response
+        # if re.search(r'https:\/\/www.iqiyi.com\/v_[A-Za-z0-9]+.html', request.url) != None:
+        #     browser = spider.browser
+        #     browser.get(request.url)
+        #     page_text = browser.page_source
+        #     new_response = HtmlResponse(url=request.url,
+        #                                 body=page_text,
+        #                                 encoding='utf-8',
+        #                                 request=request)
+        #     return new_response
+        # return None
 
     def process_response(self, request, response, spider):
         # Called with the response returned from the downloader.

@@ -52,14 +52,15 @@ class YstVideoDownloadPipeline(FilesPipeline):
         video_name = IqiyiVideoCrawlerItem(item).get("video_name", "")
         serials_name = IqiyiVideoCrawlerItem(item).get("serials_name", "")
         m3u8path = IqiyiVideoCrawlerItem(item).get("m3u8path", "")
+        mp4path = IqiyiVideoCrawlerItem(item).get("mp4path", "")
         print("YstVideoDownloadPipeline   m3u8path=", m3u8path)
         if len(m3u8path) > 0:
             print("len(m3u8path>0")
             # settings = Settings()
             # m3u8path = item['m3u8path']
             # logger.info("settings.get FILES_STORE=", settings.get('FILES_STORE'))
-            mp4path = os.path.join(r'D:\dev\python\crawler\yst_video_crawler', serials_name)
-            logger.info("mp4path=", mp4path)
+            # mp4path = os.path.join(r'D:\dev\python\crawler\yst_video_crawler', serials_name)
+            # logger.info("mp4path=", mp4path)
             m3u8_downloader = os.path.join(os.path.abspath(os.path.curdir),
                                         r"yst_video_crawler\spiders\N_m3u8DL-CLI")
             logger.info("m3u8_downloader=", m3u8_downloader)
